@@ -4,12 +4,19 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.ActionMode;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -18,6 +25,7 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -64,6 +72,43 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        registerForContextMenu(myListView);
+
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu,View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.context_menu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        Cursor SelectedTaskCursor = (Cursor)myListView.getItemAtPosition(info.position);
+        final String selectedTask = SelectedTaskCursor.getString(SelectedTaskCursor.getColumnIndex("title"));
+        Intent intent;
+        switch (item.getItemId()) {
+            case R.id.google:
+                Uri webpage = Uri.parse("http://www.google.com/search?q="+selectedTask);
+                intent = new Intent(Intent.ACTION_VIEW, webpage);
+                startActivity(intent);
+                break;
+            case R.id.google_map:
+                Uri location = Uri.parse("geo:0,0?q="+selectedTask);
+                intent = new Intent(Intent.ACTION_VIEW, location);
+                break;
+            default:
+                return super.onContextItemSelected(item);
+        }
+        // Verifying if the app is ready to receive the intent
+        PackageManager packageManager = getPackageManager();
+        List<ResolveInfo> activites = packageManager.queryIntentActivities(intent, 0);
+
+        if (activites.size() > 0)
+            startActivity(intent);
+        return true;
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
